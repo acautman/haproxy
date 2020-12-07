@@ -498,6 +498,9 @@ int h2_make_htx_request(struct http_hdr *list, struct htx *htx, unsigned int *ms
 	/* now send the end of headers marker */
 	htx_add_endof(htx, HTX_BLK_EOH);
 
+	if (*msgf & H2_MSGF_BODY_TUNNEL)
+		*msgf &= ~(H2_MSGF_BODY|H2_MSGF_BODY_CL);
+
 	/* Set bytes used in the HTX message for the headers now */
 	sl->hdrs_bytes = htx_used_space(htx) - used;
 
@@ -698,6 +701,9 @@ int h2_make_htx_response(struct http_hdr *list, struct htx *htx, unsigned int *m
 
 	/* now send the end of headers marker */
 	htx_add_endof(htx, HTX_BLK_EOH);
+
+	if ((*msgf & H2_MSGF_BODY_TUNNEL) && sl->info.res.status >= 200 && sl->info.res.status < 300)
+		*msgf &= ~(H2_MSGF_BODY|H2_MSGF_BODY_CL);
 
 	/* Set bytes used in the HTX message for the headers now */
 	sl->hdrs_bytes = htx_used_space(htx) - used;
